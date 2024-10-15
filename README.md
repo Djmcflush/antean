@@ -66,6 +66,26 @@ To install the necessary Python dependencies, run:
 pip install -r requirements.txt
 ```
 
+## Python Setup
+
+To set up the Python environment for the readiness pipelines, follow these steps:
+
+1. **Install Python Dependencies**
+
+   Ensure you have Python installed on your system. Then, install the required Python packages using pip:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the Pipelines**
+
+   Use the `pipeline_manager.py` script to start all readiness pipelines. This script will handle starting each pipeline and managing any errors that occur.
+
+   ```bash
+   python src/scripts/pipeline_manager.py
+   ```
+
 ## Future Enhancements
 
 - **Integration with real data**: Use actual military unit readiness data for more accurate predictions.
