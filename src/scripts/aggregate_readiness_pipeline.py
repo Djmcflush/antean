@@ -1,38 +1,66 @@
-import kafka
 import json
+import psycopg2
+from kafka import KafkaConsumer
+from dotenv import load_dotenv
+import os
 
-def extract_data():
-    # Placeholder for data extraction logic
-    pass
-
-def process_data(data):
-    # Placeholder for data processing logic
-    pass
+# Load environment variables from .env file
+load_dotenv()
 
 def calculate_aggregate_score(personnel_score, family_score, medical_score):
-    # Placeholder for aggregate readiness score calculation
+    # Calculate the aggregate readiness score as an average of the three scores
     aggregate_score = (personnel_score + family_score + medical_score) / 3
     return aggregate_score
 
+def submit_to_database(data):
+    # Connect to the PostgreSQL database using environment variables
+    connection = psycopg2.connect(
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
+    )
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO aggregate_readiness (
+            Personnel_ID, Aggregate_Readiness_Score
+        ) VALUES (%s, %s)
+        ON CONFLICT (Personnel_ID) DO UPDATE SET
+            Aggregate_Readiness_Score = EXCLUDED.Aggregate_Readiness_Score
+        """,
+        (
+            data['Personnel_ID'], data['Aggregate_Readiness_Score']
+        )
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+
 def main():
-    # Kafka setup
-    producer = kafka.KafkaProducer(bootstrap_servers='localhost:9092')
-    consumer = kafka.KafkaConsumer('aggregate_readiness', bootstrap_servers='localhost:9092')
+    # Kafka consumer setup
+    consumer = KafkaConsumer(
+        'aggregate_readiness',
+        bootstrap_servers='localhost:9092',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+    )
 
-    # Data extraction
-    data = extract_data()
+    for message in consumer:
+        # Calculate aggregate readiness score
+        personnel_score = message.value['Readiness_Score_Personnel']
+        family_score = message.value['Readiness_Score_Family']
+        medical_score = message.value['Readiness_Score_Medical']
+        aggregate_score = calculate_aggregate_score(personnel_score, family_score, medical_score)
 
-    # Data processing
-    processed_data = process_data(data)
+        # Prepare data for database submission
+        data = {
+            'Personnel_ID': message.value['Personnel_ID'],
+            'Aggregate_Readiness_Score': aggregate_score
+        }
 
-    # Readiness score calculation
-    personnel_score = processed_data.get('personnel_score', 0)
-    family_score = processed_data.get('family_score', 0)
-    medical_score = processed_data.get('medical_score', 0)
-    aggregate_score = calculate_aggregate_score(personnel_score, family_score, medical_score)
-
-    # Send data to Kafka
-    producer.send('readiness_scores', json.dumps({'aggregate_score': aggregate_score}).encode('utf-8'))
+        # Submit to database
+        submit_to_database(data)
 
 if __name__ == "__main__":
     main()

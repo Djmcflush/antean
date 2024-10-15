@@ -1,34 +1,74 @@
-import kafka
 import json
+import psycopg2
+from kafka import KafkaConsumer
+from dotenv import load_dotenv
+import os
 
-def extract_data():
-    # Placeholder for data extraction logic
-    pass
+# Load environment variables from .env file
+load_dotenv()
 
 def process_data(data):
-    # Placeholder for data processing logic
-    pass
+    # Process data to calculate readiness score
+    if data['Family_Support_Plan'] and data['Housing_Status'] == 'Stable':
+        data['Readiness_Score_Family'] = 100.0
+    else:
+        data['Readiness_Score_Family'] = 50.0
+    return data
 
-def calculate_readiness_score(processed_data):
-    # Placeholder for readiness score calculation
-    pass
+def submit_to_database(data):
+    # Connect to the PostgreSQL database using environment variables
+    connection = psycopg2.connect(
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
+    )
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO family_readiness (
+            Personnel_ID, Family_Status, Dependent_Count, Primary_Emergency_Contact,
+            Emergency_Contact_Phone, Family_Support_Plan, Family_Support_Plan_Update_Date,
+            Dependent_Care_Status, Housing_Status, Spouse_Employment_Status, Readiness_Score_Family
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (Personnel_ID) DO UPDATE SET
+            Family_Status = EXCLUDED.Family_Status,
+            Dependent_Count = EXCLUDED.Dependent_Count,
+            Primary_Emergency_Contact = EXCLUDED.Primary_Emergency_Contact,
+            Emergency_Contact_Phone = EXCLUDED.Emergency_Contact_Phone,
+            Family_Support_Plan = EXCLUDED.Family_Support_Plan,
+            Family_Support_Plan_Update_Date = EXCLUDED.Family_Support_Plan_Update_Date,
+            Dependent_Care_Status = EXCLUDED.Dependent_Care_Status,
+            Housing_Status = EXCLUDED.Housing_Status,
+            Spouse_Employment_Status = EXCLUDED.Spouse_Employment_Status,
+            Readiness_Score_Family = EXCLUDED.Readiness_Score_Family
+        """,
+        (
+            data['Personnel_ID'], data['Family_Status'], data['Dependent_Count'], data['Primary_Emergency_Contact'],
+            data['Emergency_Contact_Phone'], data['Family_Support_Plan'], data['Family_Support_Plan_Update_Date'],
+            data['Dependent_Care_Status'], data['Housing_Status'], data['Spouse_Employment_Status'],
+            data['Readiness_Score_Family']
+        )
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
 
 def main():
-    # Kafka setup
-    producer = kafka.KafkaProducer(bootstrap_servers='localhost:9092')
-    consumer = kafka.KafkaConsumer('family_readiness', bootstrap_servers='localhost:9092')
+    # Kafka consumer setup
+    consumer = KafkaConsumer(
+        'family_readiness',
+        bootstrap_servers='localhost:9092',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+    )
 
-    # Data extraction
-    data = extract_data()
+    for message in consumer:
+        # Data processing
+        processed_data = process_data(message.value)
 
-    # Data processing
-    processed_data = process_data(data)
-
-    # Readiness score calculation
-    readiness_score = calculate_readiness_score(processed_data)
-
-    # Send data to Kafka
-    producer.send('readiness_scores', json.dumps(readiness_score).encode('utf-8'))
+        # Submit to database
+        submit_to_database(processed_data)
 
 if __name__ == "__main__":
     main()
