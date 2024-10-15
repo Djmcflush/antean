@@ -1,24 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Military Unit Readiness Prediction System
 
-## Getting Started
+This project is designed to calculate and track the readiness of military units from the squad level up to the field army level. It aggregates unit-level data, such as personnel, equipment, training, and logistics readiness, to generate an overall readiness score at each hierarchy level (platoon, company, battalion, brigade, etc.). The system will predict readiness trends and provide valuable insights for command decisions.
 
-First, run the development server:
+## Project Goals
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Track readiness**: Calculate readiness scores based on multiple factors like personnel, equipment, training, and supplies.
+- **Predict readiness**: Use a pipeline to generate predictions on future readiness trends based on historical data and conditions.
+- **Aggregate readiness**: Roll up the readiness data from the squad level to higher levels of the military hierarchy, making it possible to view readiness scores for platoons, companies, battalions, brigades, divisions, corps, and armies.
+
+## Features
+
+- **Readiness Score Calculation**: Track readiness metrics across units, including personnel availability, equipment status, training completion, and logistical supplies.
+- **Prediction Pipeline**: Predict future readiness scores based on historical trends.
+- **Database Integration**: Store readiness data and predictions in a database for easy querying and reporting.
+
+## Project Structure
+
+```
+├── src/
+│   ├── scripts/
+│   │   ├── readiness_prediction_pipeline.py
+│   │   ├── add_readiness_predictions.py
+│   └── setupDatabase.js
+├── README.md
+└── requirements.txt
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **setupDatabase.js**: Initializes the database, creates necessary tables, and populates it with sample data.
+- **readiness_prediction_pipeline.py**: Generates mock readiness predictions and integrates them into the database.
+- **add_readiness_predictions.py**: Script to add generated predictions to the database.
 
 ## Database Setup and Prediction Pipeline
 
@@ -42,17 +52,22 @@ python src/scripts/readiness_prediction_pipeline.py
 
 This script will generate mock predictions and add them to the database using the `add_readiness_predictions.py` script.
 
-## Learn More
+## Requirements
 
-To learn more about Next.js, take a look at the following resources:
+Make sure to have the following dependencies installed before running the project:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Node.js** (for database setup)
+- **Python 3.x** (for running the prediction pipeline)
+- Required Python packages (listed in `requirements.txt`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To install the necessary Python dependencies, run:
 
-## Deploy on Vercel
+```bash
+pip install -r requirements.txt
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Future Enhancements
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Integration with real data**: Use actual military unit readiness data for more accurate predictions.
+- **Improved prediction algorithms**: Implement machine learning models to enhance the prediction of future readiness scores.
+- **Dashboard for visualization**: Add a web-based interface to visualize readiness metrics and trends at various levels of the hierarchy.
