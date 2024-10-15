@@ -20,6 +20,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Database Setup and Prediction Pipeline
+
+### Setting up the Database
+
+To set up the database, run the following command:
+
+```bash
+node setupDatabase.js
+```
+
+This script will create the necessary tables and insert sample data into the database.
+
+### Running the Prediction Pipeline
+
+To generate and add readiness predictions to the database, run the following command:
+
+```bash
+python src/scripts/readiness_prediction_pipeline.py
+```
+
+This script will generate mock predictions and add them to the database using the `add_readiness_predictions.py` script.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
